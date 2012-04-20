@@ -684,9 +684,12 @@ void AsmPrinter::EmitFunctionBody() {
         break;
 
       case TargetOpcode::EH_LABEL:
-      case TargetOpcode::GC_LABEL:
-        OutStreamer.EmitLabel(II->getOperand(0).getMCSymbol());
+      case TargetOpcode::GC_LABEL: {
+        MCSymbol *Symbol = II->getOperand(0).getMCSymbol();
+        if (!Symbol->isDefined())
+          OutStreamer.EmitLabel(Symbol);
         break;
+      }
       case TargetOpcode::INLINEASM:
         EmitInlineAsm(II);
         break;

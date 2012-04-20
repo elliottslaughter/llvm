@@ -1564,6 +1564,31 @@ public:
   }
 };
 
+/// GCNoteRootSDNode - An SDNode that represents a GC root note.
+///
+class GCNoteRootSDNode : public SDNode {
+  SDUse Ops[2];
+  const Constant *Metadata;
+  MCSymbol *Label;
+  friend class SelectionDAG;
+  GCNoteRootSDNode(SDValue Chain, SDValue Root, const Constant *MD,
+                   MCSymbol *L)
+    : SDNode(ISD::GCNOTEROOT, DebugLoc(), getSDVTList(MVT::Other)),
+      Metadata(MD),
+      Label(L) {
+    InitOperands(Ops, Chain, Root);
+  }
+
+public:
+  const Constant *getMetadata() const { return Metadata; }
+  MCSymbol *getLabel() const { return Label; }
+
+  static bool classof(const GCNoteRootSDNode *) { return true; }
+  static bool classof(const SDNode *N) {
+    return N->getOpcode() == ISD::GCNOTEROOT;
+  }
+};
+
 /// LSBaseSDNode - Base class for LoadSDNode and StoreSDNode
 ///
 class LSBaseSDNode : public MemSDNode {

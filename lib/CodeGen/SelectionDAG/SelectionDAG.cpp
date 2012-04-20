@@ -1413,6 +1413,22 @@ SDValue SelectionDAG::getEHLabel(DebugLoc dl, SDValue Root, MCSymbol *Label) {
   return SDValue(N, 0);
 }
 
+SDValue SelectionDAG::getGCNoteRoot(SDValue Chain, SDValue Root,
+                                    const Constant *C, MCSymbol *Label) {
+  FoldingSetNodeID ID;
+  SDValue Ops[] = { Chain, Root };
+  AddNodeIDNode(ID, ISD::GCNOTEROOT, getVTList(MVT::Other), &Ops[0], 2);
+  ID.AddPointer(C);
+  void *IP = 0;
+  if (SDNode *E = CSEMap.FindNodeOrInsertPos(ID, IP))
+    return SDValue(E, 0);
+
+  SDNode *N = new (NodeAllocator) GCNoteRootSDNode(Chain, Root, C, Label);
+  CSEMap.InsertNode(N, IP);
+  AllNodes.push_back(N);
+  return SDValue(N, 0);
+}
+
 
 SDValue SelectionDAG::getBlockAddress(const BlockAddress *BA, EVT VT,
                                       bool isTarget,

@@ -21,6 +21,7 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
+#include "VirtRegMap.h"
 using namespace llvm;
 
 namespace {
@@ -63,6 +64,39 @@ GCFunctionInfo::GCFunctionInfo(const Function &F, GCStrategy &S)
   : F(F), S(S), FrameSize(~0LL) {}
 
 GCFunctionInfo::~GCFunctionInfo() {}
+
+void GCFunctionInfo::processRegisterAssignment(VirtRegMap &VRM) {
+  printf("Dumping GCFunctionInfo\n");
+  VRM.dump();
+  for (iterator SPI = begin(), SPE = end(); SPI != SPE; ++SPI) {
+    for (GCPoint::iterator PI = SPI->begin(), PE = SPI->end(); PI != PE;
+         ++PI) {
+      if (!PI->Stack && !PI->Phys) {
+        if (VRM.hasPhys(PI->Data)) {
+          printf("Assigning phys reg %d to virt reg %u\n",
+                 VRM.getPhys(PI->Data), PI->Data);
+          PI->Data = VRM.getPhys(PI->Data);
+          PI->Phys = true;
+        } else {
+          printf("Assigning frame index %d to virt reg %u\n",
+                 VRM.getStackSlot(PI->Data), PI->Data);
+          PI->Data = VRM.getStackSlot(PI->Data);
+          PI->Stack = true;
+        }
+      }
+    }
+  }
+}
+
+void GCFunctionInfo::renameRegister(unsigned SrcReg, unsigned DstReg) {
+  for (iterator SPI = begin(), SPE = end(); SPI != SPE; ++SPI) {
+    for (GCPoint::iterator PI = SPI->begin(), PE = SPI->end(); PI != PE;
+         ++PI) {
+      if (!PI->Stack && !PI->Phys && PI->Data == SrcReg)
+        PI->Data = DstReg;
+    }
+  }
+}
 
 // -----------------------------------------------------------------------------
 

@@ -398,6 +398,8 @@ public:
   SDValue getEHLabel(DebugLoc dl, SDValue Root, MCSymbol *Label);
   SDValue getBlockAddress(const BlockAddress *BA, EVT VT,
                           bool isTarget = false, unsigned char TargetFlags = 0);
+  SDValue getGCNoteRoot(SDValue Chain, SDValue Root, const Constant *C,
+                        MCSymbol *Label);
 
   SDValue getCopyToReg(SDValue Chain, DebugLoc dl, unsigned Reg, SDValue N) {
     return getNode(ISD::CopyToReg, dl, MVT::Other, Chain,

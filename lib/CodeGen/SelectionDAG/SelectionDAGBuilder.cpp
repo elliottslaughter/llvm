@@ -5075,12 +5075,23 @@ SelectionDAGBuilder::visitIntrinsicCall(const CallInst &I, unsigned Intrinsic) {
   case Intrinsic::gcwrite:
     llvm_unreachable("GC failed to lower gcread/gcwrite intrinsics!");
   case Intrinsic::gcnoteroot: {
-    EVT vt = MVT::Other;
+    const Constant *TypeMap = cast<Constant>(I.getArgOperand(1));
+
+    // Reuse the same label as the previous root note if possible.
+    MCSymbol *Label;
+    if (dyn_cast<GCNoteRootSDNode>(DAG.getRoot()))
+      Label = cast<GCNoteRootSDNode>(DAG.getRoot())->getLabel();
+    else
+      Label = DAG.getMachineFunction().getMMI().getContext().CreateTempSymbol();
+
+    SDValue Operand = LowerGCRootNoteOperand(getValue(I.getArgOperand(0)));
+    DAG.setRoot(DAG.getGCNoteRoot(getRoot(), Operand, TypeMap, Label));
+    /*EVT vt = MVT::Other;
     SmallVector<SDValue, 3> Values;
     Values.push_back(getRoot()); // root
     Values.push_back(getValue(I.getArgOperand(0))); // root
     Values.push_back(getValue(I.getArgOperand(1))); // meta
-    DAG.setRoot(DAG.getNode(ISD::GCNOTEROOT, dl, &vt, 1, &Values[0], 3));
+    DAG.setRoot(DAG.getNode(ISD::GCNOTEROOT, dl, &vt, 1, &Values[0], 3));*/
     return 0;
   }
   case Intrinsic::flt_rounds:
@@ -5152,6 +5163,37 @@ SelectionDAGBuilder::visitIntrinsicCall(const CallInst &I, unsigned Intrinsic) {
   case Intrinsic::lifetime_end:
     // Discard region information.
     return 0;
+  }
+}
+
+#if 0
+void SelectionDAGBuilder::LowerGCRootNote(SDNode *N) {
+  switch (N->getOpcode()) {
+  case ISD::zero_extend:
+    // Messy IR, but we'll let this slide.
+    return LowerGCRootNote(N->getOperand(0));
+  case ISD::CopyFromReg:
+    return LowerGCRootNote(N->getOperand(1));
+  case ISD::Register:
+    GFI->addGlobalRegisterRoot(cast<RegisterSDNode>(N)->getReg(), NULL);
+    return;
+  default:
+    assert(0 && "Unsupported GC root note type!");
+  }
+}
+#endif
+
+SDValue SelectionDAGBuilder::LowerGCRootNoteOperand(SDValue N) {
+  switch (N.getNode()->getOpcode()) {
+  case ISD::ZERO_EXTEND:
+    // Messy IR, but we'll let this slide.
+    return LowerGCRootNoteOperand(N->getOperand(0));
+  case ISD::CopyFromReg:
+    return LowerGCRootNoteOperand(N->getOperand(1));
+  case ISD::Register:
+    return N;
+  default:
+    assert(0 && "Unsupported GC root note type!");
   }
 }
 

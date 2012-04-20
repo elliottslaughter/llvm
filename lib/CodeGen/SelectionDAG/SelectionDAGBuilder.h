@@ -566,6 +566,8 @@ private:
   /// instruction selection, they will be inserted to the entry BB.
   bool EmitFuncArgumentDbgValue(const Value *V, MDNode *Variable,
                                 int64_t Offset, const SDValue &N);
+
+  SDValue LowerGCRootNoteOperand(SDValue N);
 };
 
 } // end namespace llvm

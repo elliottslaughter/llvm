@@ -917,6 +917,10 @@ RegisterCoalescer::UpdateRegDefsUses(const CoalescerPair &CP) {
   // Update LiveDebugVariables.
   LDV->renameRegister(SrcReg, DstReg, SubIdx);
 
+  // Update GC info.
+  GCFunctionInfo &GCFI = MF->getGMI()->getFunctionInfo(*MF->getFunction());
+  GCFI.renameRegister(SrcReg, DstReg);
+
   for (MachineRegisterInfo::reg_iterator I = MRI->reg_begin(SrcReg);
        MachineInstr *UseMI = I.skipInstruction();) {
     // A PhysReg copy that won't be coalesced can perhaps be rematerialized

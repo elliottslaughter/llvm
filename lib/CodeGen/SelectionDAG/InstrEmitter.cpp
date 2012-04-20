@@ -28,6 +28,7 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/MathExtras.h"
+#include <stdio.h>
 using namespace llvm;
 
 /// MinRCSize - Smallest register class we allow when constraining virtual
@@ -837,6 +838,33 @@ EmitSpecialNode(SDNode *Node, bool IsClone, bool IsCloned,
     MCSymbol *S = cast<EHLabelSDNode>(Node)->getLabel();
     BuildMI(*MBB, InsertPos, Node->getDebugLoc(),
             TII->get(TargetOpcode::EH_LABEL)).addSym(S);
+    break;
+  }
+
+  case ISD::GCNOTEROOT: {
+    const Constant *Metadata = cast<GCNoteRootSDNode>(Node)->getMetadata();
+
+    GCFunctionInfo &GCFI = MF->getGMI()->getFunctionInfo(*MF->getFunction());
+    MCSymbol *Label = cast<GCNoteRootSDNode>(Node)->getLabel();
+    GCPoint &P = GCFI.getSafePoint(Label, Node->getDebugLoc());
+
+    // TODO: Coalesce these somehow?
+    BuildMI(*MBB, InsertPos, Node->getDebugLoc(),
+            TII->get(TargetOpcode::GC_LABEL)).addSym(Label);
+
+    printf("Noting root with %d operands:\n", Node->getNumOperands());
+    SDValue Op = Node->getOperand(1);
+    if (dyn_cast<RegisterSDNode>(Op)) {
+      unsigned VirtRegNo = cast<RegisterSDNode>(Op)->getReg();
+      printf("Register %u!\n", VirtRegNo);
+      GCRoot Root(false, Metadata, VirtRegNo);
+      P.addRoot(Root);
+    } else if (dyn_cast<FrameIndexSDNode>(Op)) {
+      printf("TODO: Frame index!\n");
+    } else if (Op.isMachineOpcode()) {
+      printf("TODO: Machine opcode!\n");
+    }
+    Op.getNode()->dump();
     break;
   }
 

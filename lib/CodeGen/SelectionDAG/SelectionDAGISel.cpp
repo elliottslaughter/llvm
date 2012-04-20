@@ -54,6 +54,7 @@
 #include "llvm/ADT/PostOrderIterator.h"
 #include "llvm/ADT/Statistic.h"
 #include <algorithm>
+#include <cstdio>
 using namespace llvm;
 
 STATISTIC(NumFastIselFailures, "Number of instructions fast isel failed on");
@@ -2198,6 +2199,7 @@ SelectCodeCommon(SDNode *NodeToMatch, const unsigned char *MatcherTable,
   case ISD::CopyFromReg:
   case ISD::CopyToReg:
   case ISD::EH_LABEL:
+  case ISD::GCNOTEROOT:
     NodeToMatch->setNodeId(-1); // Mark selected.
     return 0;
   case ISD::AssertSext:

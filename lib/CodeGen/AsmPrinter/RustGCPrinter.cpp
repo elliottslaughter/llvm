@@ -213,7 +213,8 @@ void RustGCMetadataPrinter::emitRoots(AsmPrinter &AP) {
       for (GCPoint::iterator RB = PB->begin(), RE = PB->end();
            RB != RE; ++RB) {
         AP.EmitInt32(-RB->Data);          // loc
-        AP.EmitInt32(RB->Metadata.Num);   // type
+        // FIXME: emit constant
+        //AP.EmitInt32(RB->Metadata.Num);   // type
       }
     }
   }

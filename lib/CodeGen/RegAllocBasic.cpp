@@ -23,6 +23,7 @@
 #include "llvm/Function.h"
 #include "llvm/PassAnalysisSupport.h"
 #include "llvm/CodeGen/CalcSpillWeights.h"
+#include "llvm/CodeGen/GCMetadata.h"
 #include "llvm/CodeGen/LiveIntervalAnalysis.h"
 #include "llvm/CodeGen/LiveStackAnalysis.h"
 #include "llvm/CodeGen/MachineFunctionPass.h"
@@ -341,6 +342,10 @@ bool RABasic::runOnMachineFunction(MachineFunction &mf) {
 
   // Write out new DBG_VALUE instructions.
   getAnalysis<LiveDebugVariables>().emitDebugValues(VRM);
+
+  // Tell the GC pass to convert virtual registers to physical registers.
+  const Function *Fn = MF->getFunction();
+  MF->getGMI()->getFunctionInfo(*Fn).processRegisterAssignment(*VRM);
 
   // All machine operands and other references to virtual registers have been
   // replaced. Remove the virtual registers and release all the transient data.

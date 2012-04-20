@@ -45,6 +45,7 @@ namespace llvm {
   class GCStrategy;
   class Constant;
   class MCSymbol;
+  class VirtRegMap;
 
   namespace GC {
     /// PointKind - The type of a collector-safe point.
@@ -57,34 +58,19 @@ namespace llvm {
     };
   }
 
-  /// GCRootMetadata - User-supplied metadata for a GC root, either an LLVM
-  /// Constant value or an opaque unsigned integer.
-  ///
-  union GCRootMetadata {
-    const Constant *Const;
-    unsigned Num;
-  };
-
   /// GCRoot - Metadata for a pointer to an object managed by the garbage
   /// collector.
   ///
   struct GCRoot {
     bool Stack;                 //< True if on the stack, false otherwise.
-    int Data;                   //< Stack offset if on stack, register number
+    bool Phys;                  //< True if the register is physical, false if
+                                //  the register is virtual.
+    unsigned Data;              //< Stack offset if on stack, register number
                                 //  otherwise.
-    bool MetadataIsConstant;    //< True if the metadata is an LLVM Constant,
-                                //  false otherwise.
-    GCRootMetadata Metadata;    //< Metadata associated with this root.
+    const Constant *Metadata;   //< Metadata associated with this root.
 
-    GCRoot(bool S, const Constant *MD, int D)
-    : Stack(S), Data(D), MetadataIsConstant(true) {
-      Metadata.Const = MD;
-    }
-
-    GCRoot(bool S, unsigned MD, int D)
-    : Stack(S), Data(D), MetadataIsConstant(false) {
-      Metadata.Num = MD;
-    }
+    GCRoot(bool S, const Constant *MD, unsigned D)
+        : Stack(S), Phys(false), Data(D), Metadata(MD) {}
   };
 
   /// GCPoint - Metadata for a collector-safe point in machine code.
@@ -178,6 +164,14 @@ namespace llvm {
       return SafePoints.back();
     }
 
+    GCPoint &getSafePoint(MCSymbol *Label, DebugLoc DL) {
+      for (iterator SPI = begin(), SPE = end(); SPI != SPE; ++SPI) {
+        if (SPI->Label == Label)
+          return *SPI;
+      }
+      return addSafePoint(GC::PostCall, Label, DL);
+    }
+
     /// addGlobalRoot - Notes the existence of a function-global root. Num
     /// is the ID of the frame index; MD is the front-end-supplied metadata.
     ///
@@ -192,6 +186,9 @@ namespace llvm {
     void addCalleeSave(const GCCalleeSave &CS) {
         CalleeSaves.push_back(CS);
     }
+
+    void processRegisterAssignment(VirtRegMap &VM);
+    void renameRegister(unsigned SrcReg, unsigned DstReg);
 
     /// getFrameSize/setFrameSize - Records the function's frame size.
     ///

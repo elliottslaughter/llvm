@@ -3848,6 +3848,7 @@ int X86InstrInfo::getGCRegisterIndex(int Reg) const {
 }
 
 GCRoot X86InstrInfo::getGCRootForNote(const MachineInstr *MI) const {
+#if 0
   bool IsStack = false;
   unsigned Metadata = 0;
   int Data = 0;
@@ -3872,6 +3873,8 @@ GCRoot X86InstrInfo::getGCRootForNote(const MachineInstr *MI) const {
     assert(0 && "Supplied instruction is not a GC root note!");
   }
   return GCRoot(IsStack, Metadata, Data);
+#endif
+  return GCRoot(false, NULL, 0);
 }
 
 namespace {
