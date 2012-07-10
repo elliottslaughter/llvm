@@ -2917,6 +2917,10 @@ void SelectionDAGLegalize::ExpandNode(SDNode *Node) {
       Results.push_back(Node->getOperand(0));
     }
     break;
+  case ISD::GCROOT:
+    // Elliott: Are GC roots always legal?
+    Results.push_back(Node->getOperand(0));
+    break;
   case ISD::FCOPYSIGN:
     Results.push_back(ExpandFCOPYSIGN(Node));
     break;

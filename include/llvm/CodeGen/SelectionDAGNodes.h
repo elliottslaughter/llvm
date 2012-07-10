@@ -1567,6 +1567,23 @@ public:
   }
 };
 
+/// GCRootSDNode - An SDNode that represents a GC root intrinsic.
+class GCRootSDNode : public SDNode {
+  SDUse Ops[2];
+  const Constant *Metadata;
+  friend class SelectionDAG;
+public:
+  explicit GCRootSDNode(SDValue Chain, SDValue Root, const Constant *MD)
+    : SDNode(ISD::GCROOT, DebugLoc(), getSDVTList(MVT::Other)),
+      Metadata(MD) {
+    InitOperands(Ops, Chain, Root);
+  }
+  static bool classof(const VTSDNode *) { return true; }
+  static bool classof(const SDNode *N) {
+    return N->getOpcode() == ISD::GCROOT;
+  }
+}
+
 /// LSBaseSDNode - Base class for LoadSDNode and StoreSDNode
 ///
 class LSBaseSDNode : public MemSDNode {
