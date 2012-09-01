@@ -340,6 +340,10 @@ void LowerIntrinsics::AutomaticallyRootValue(AllocaInst &AI, Type *Ty,
     if (cast<PointerType>(Ty)->getAddressSpace() < 1)
       break;
 
+    // Elliott: Debug
+    DEBUG(dbgs() << "Inserting automatic root for alloca:\n");
+    DEBUG(AI.dump());
+
     // Create the GEP, if necessary.
     Instruction *BaseInst = &AI;
     if (Indices.size() > 1) {
@@ -546,6 +550,9 @@ void LowerIntrinsics::InsertGCRegisterRoots(Function &F, GCStrategy &S) {
 }
 
 bool LowerIntrinsics::PerformDefaultLowering(Function &F, GCStrategy &S) {
+  // Elliott: Debug
+  DEBUG(dbgs() << "##### LowerIntrinsics::PerformDefaultLowering\n");
+  DEBUG(dbgs() << "      for function " << F.getName() << "\n");
   InsertAutomaticGCRoots(F, S);
   // FIXME: Turn this back on after fixing gcregroot in SelectionDAG.
   //InsertGCRegisterRoots(F, S);

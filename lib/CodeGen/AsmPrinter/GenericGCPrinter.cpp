@@ -28,6 +28,9 @@
 #include "llvm/Target/TargetLoweringObjectFile.h"
 #include "llvm/Target/TargetMachine.h"
 
+// Elliott: Remove debug include
+#include "llvm/Support/Debug.h"
+
 using namespace llvm;
 
 namespace {
@@ -86,6 +89,9 @@ void GenericGCMetadataPrinter::writeSafePointInfo(AsmPrinter &AP,
   const MCRegisterInfo &MRI = AP.OutStreamer.getContext().getRegisterInfo();
   unsigned PtrSize = AP.TM.getTargetData()->getPointerSize();
 
+  // Elliott: Debug
+  DEBUG(dbgs() << "safe point " << Index << ":\n");
+
   unsigned RegRootCount = 0, StackRootCount = 0;
   for (GCFunctionInfo::live_iterator LI = FI.live_begin(Index),
                                      LE = FI.live_end(Index); LI != LE; ++LI) {
@@ -98,11 +104,17 @@ void GenericGCMetadataPrinter::writeSafePointInfo(AsmPrinter &AP,
   AP.EmitInt32(StackRootCount);
   AP.EmitInt32(RegRootCount);
 
+  DEBUG(dbgs() << "  with " << StackRootCount << " stack roots\n");
+  DEBUG(dbgs() << "  and " << RegRootCount << " register roots\n");
+
   // Write out the locations of all stack roots.
+  DEBUG(dbgs() << "  stack roots:\n");
   for (GCFunctionInfo::live_iterator LI = FI.live_begin(Index),
                                      LE = FI.live_end(Index); LI != LE; ++LI) {
-    if (!LI->isReg())
+    if (!LI->isReg()) {
       AP.EmitInt32(LI->Loc.StackOffset);
+      DEBUG(dbgs() << "    at offset " << LI->Loc.StackOffset << "\n");
+    }
   }
 
   // Write out the locations of all register roots.
@@ -188,6 +200,10 @@ void GenericGCMetadataPrinter::writeFunctionMetadata(AsmPrinter &AP,
 
   StringRef Name = FI.getFunction().getName();
   AP.OutStreamer.AddComment("GC metadata for " + Name);
+
+  // Elliott: Debug
+  DEBUG(dbgs() << "### GenericGCMetadataPrinter::writeFunctionMetadata\n");
+  DEBUG(dbgs() << "      for function " << Name << "\n");
 
   // Emit the function metadata symbol.
   SmallString<128> FnMetadataName;
